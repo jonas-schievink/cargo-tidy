@@ -1,4 +1,4 @@
-# Tidy up your project!
+# Tidy up your project! [![Build Status](https://travis-ci.org/jonas-schievink/cargo-tidy.svg?branch=master)](https://travis-ci.org/jonas-schievink/cargo-tidy)
 
 This is a small Cargo subcommand, `cargo tidy`, which allows you to configure
 various code style checks to be executed. You can then put it in CI to make sure
