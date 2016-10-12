@@ -1,0 +1,26 @@
+# This is the configuration file for `.rs` files inside the cargo-tidy project
+# itself.
+
+# By default, `cargo tidy` checks all .rs files in the project, so we don't need
+# to specify it here.
+# include = ["**/*.rs"]
+
+# You can exclude files matched by the `include` globs. We just keep the empty
+# default.
+# exclude = []
+
+# Deny Rust files with more than 100 characters on one line
+max-line-length = 100
+
+# This specifies a list of regular expressions to be denied. Each one is matched
+# against every line of every checked file (including the line's ending).
+forbidden-content = [
+    # This denies Mac OS / Windows line breaks (just "\r" would also work).
+    "\\r",
+    # This denies all tab characters (just "\t" would also work).
+    "\\t",
+    # This denies trailing whitespace. We do not use the `\s` whitespace char
+    # class since that includes line endings, which we can also match with a
+    # regex.
+    " $",
+]
