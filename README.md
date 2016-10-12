@@ -4,7 +4,8 @@ This is a small Cargo subcommand, `cargo tidy`, which allows you to configure
 various code style checks to be executed. You can then put it in CI to make sure
 that all PRs adhere to the rules.
 
-An example configuration can be found in [tidy-config.toml](./tidy-config.toml).
+An example configuration can be found in
+[tidy-config.rs.toml](./tidy-config.rs.toml).
 
 For example, `tidy` allows you to check:
 
