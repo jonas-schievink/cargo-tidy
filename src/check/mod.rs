@@ -1,10 +1,14 @@
 //! The tidy style checking engine.
 
+mod max_line_length;
+
 use config::Config;
 
 use glob::glob;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::fs::File;
+use std::io::Read;
 use std::fmt;
 use std::error::Error;
 
@@ -15,15 +19,33 @@ use std::error::Error;
 pub struct CheckError {
     /// Path to the file that failed a check.
     path: PathBuf,
-    /// Byte position inside the file where the failure occurred.
-    bytepos: usize,
+    /// Line inside the file where the failure occurred (0-based!).
+    line: usize,
+    /// Column in the line where the failure occurred. This might not make sense. In that case, this
+    /// can be set to 0.
+    column: usize,
     /// Message describing what went wrong.
     msg: String,
 }
 
+impl CheckError {
+    fn new(path: PathBuf, pos: (usize, usize), msg: String) -> Self {
+        CheckError {
+            path: path,
+            line: pos.0,
+            column: pos.1,
+            msg: msg,
+        }
+    }
+}
+
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "file '{}' failed a tidy check: {}", self.path.display(), self.msg));
+        try!(write!(f, "error at {}:{}:{}: {}",
+            self.path.display(),
+            self.line + 1,
+            self.column + 1,
+            self.msg));
 
         Ok(())
     }
@@ -35,9 +57,50 @@ impl Error for CheckError {
     }
 }
 
+/// The `TidyContext` holds information about a check performed on a file. It is passed to all
+/// checks and simplifies error construction.
+pub struct TidyContext<'a> {
+    pub config: &'a Config,
+    pub path: &'a Path,
+    pub content: &'a str,
+    errors: Vec<CheckError>,
+}
+
+impl<'a> TidyContext<'a> {
+    /// Pushes a new error into the error buffer of this context.
+    pub fn error(&mut self, pos: (usize, usize), msg: String) {
+        self.errors.push(CheckError {
+            path: self.path.to_path_buf(),
+            line: pos.0,
+            column: pos.1,
+            msg: msg,
+        });
+    }
+}
+
 fn run_all_checks_on(config: &Config, path: PathBuf) -> Result<(), Vec<CheckError>> {
     debug!("checking {}", path.display());
-    unimplemented!();
+
+    // Load file into `String`
+    let mut file = File::open(&path).unwrap();
+    let mut content = String::new();
+    file.read_to_string(&mut content).unwrap();
+
+    let mut cx = TidyContext {
+        config: config,
+        path: &path,
+        content: &content,
+        errors: Vec::new(),
+    };
+
+    // Run all checks on the contents
+    max_line_length::check(&mut cx);
+
+    if cx.errors.is_empty() {
+        Ok(())
+    } else {
+        Err(cx.errors)
+    }
 }
 
 pub fn run_checks(config: &Config) -> Result<(), Vec<CheckError>> {
