@@ -1,0 +1,12 @@
+# This is the configuration file for the cargo-tidy project itself.
+
+max-line-length = 100
+
+forbidden-content = [
+    # This denies Mac OS / Windows line breaks
+    "\r",
+    # This categorically denies all tab characters
+    "\t",
+    # This denies trailing whitespace
+    "\\s$",
+]
