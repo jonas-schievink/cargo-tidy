@@ -1,5 +1,6 @@
 //! The tidy style checking engine.
 
+mod forbidden_content;
 mod max_line_length;
 
 use config::Config;
@@ -28,17 +29,6 @@ pub struct CheckError {
     msg: String,
 }
 
-impl CheckError {
-    fn new(path: PathBuf, pos: (usize, usize), msg: String) -> Self {
-        CheckError {
-            path: path,
-            line: pos.0,
-            column: pos.1,
-            msg: msg,
-        }
-    }
-}
-
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "error at {}:{}:{}: {}",
@@ -61,8 +51,13 @@ impl Error for CheckError {
 /// checks and simplifies error construction.
 pub struct TidyContext<'a> {
     pub config: &'a Config,
+    /// Relative path to the file being checked.
     pub path: &'a Path,
+    /// The complete content of the file to-be-checked.
     pub content: &'a str,
+    /// The file's contents split into lines. Note that, unlike `str::lines()`, this preserves the
+    /// line ending found at the end of all lines (except the last).
+    pub lines_with_endings: &'a [&'a str],
     errors: Vec<CheckError>,
 }
 
@@ -86,15 +81,25 @@ fn run_all_checks_on(config: &Config, path: PathBuf) -> Result<(), Vec<CheckErro
     let mut content = String::new();
     file.read_to_string(&mut content).unwrap();
 
+    // Split contents into lines, keeping line endings untouched
+    let mut lines_with_endings = Vec::new();
+    let mut last_idx = 0;
+    for (idx, _) in content.match_indices('\n') {
+        lines_with_endings.push(&content[last_idx..idx+1]);
+        last_idx = idx;
+    }
+
     let mut cx = TidyContext {
         config: config,
         path: &path,
         content: &content,
+        lines_with_endings: &lines_with_endings,
         errors: Vec::new(),
     };
 
     // Run all checks on the contents
     max_line_length::check(&mut cx);
+    forbidden_content::check(&mut cx);
 
     if cx.errors.is_empty() {
         Ok(())

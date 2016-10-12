@@ -3,10 +3,12 @@
 max-line-length = 100
 
 forbidden-content = [
-    # This denies Mac OS / Windows line breaks
-    "\r",
-    # This categorically denies all tab characters
-    "\t",
-    # This denies trailing whitespace
-    "\\s$",
+    # This denies Mac OS / Windows line breaks (just "\r" would also work).
+    "\\r",
+    # This denies all tab characters (just "\t" would also work).
+    "\\t",
+    # This denies trailing whitespace. We do not use the `\s` whitespace char
+    # class since that includes line endings, which we can also match with a
+    # regex.
+    " $",
 ]

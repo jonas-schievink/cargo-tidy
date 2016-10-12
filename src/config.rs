@@ -65,9 +65,9 @@ make_config! {
     // A line containing more characters fails the tidy check.
     max_line_length: u64 => |raw: u64| { raw },
 
-    // List of regular expressions matching "forbidden" content of checked files.
+    // List of regular expressions matching "forbidden" content of lines inside checked files.
     //
-    // Any checked file that matches any regex fails the check.
+    // Any checked file that contains a line matching any regex fails the check.
     //
     // This is a very flexible check and can be used to check for a few different things:
     //
@@ -75,8 +75,12 @@ make_config! {
     // * Trailing whitespace
     // * Tab characters used for indentation
     // * Spaces used for indentation
-    forbidden_content: RegexSet => |raw: Vec<String>| {
-        try!(RegexSet::new(&raw))
+    //
+    // Currently, `RegexSet` does not seem to have a method for getting the string a regex inside it
+    // was created with (despite printing all regexes in its `Debug` impl), so we store them as a
+    // `Vec<String>` next to it.
+    forbidden_content: (RegexSet, Vec<String>) => |raw: Vec<String>| {
+        (try!(RegexSet::new(&raw)), raw)
     },
 }
 

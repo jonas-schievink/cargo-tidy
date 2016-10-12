@@ -64,15 +64,17 @@ fn main() {
 
     match check::run_checks(&config) {
         Ok(()) => {
-            debug!("all checks passed without error");
+            println!("all tidy checks passed without error");
         }
         Err(errs) => {
-            errprintln!("{} tidy errors", errs.len());
+            assert!(!errs.is_empty());
+
+            errprintln!("{} tidy error{}", errs.len(), if errs.len() == 1 { "" } else { "s" });
             for err in &errs {
                 errprintln!("{}", err);
             }
 
-            process::exit(errs.len() as i32);
+            process::exit(1);
         }
     }
 }
