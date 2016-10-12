@@ -1,4 +1,7 @@
-# Tidy up your project! [![Build Status](https://travis-ci.org/jonas-schievink/cargo-tidy.svg?branch=master)](https://travis-ci.org/jonas-schievink/cargo-tidy)
+# Tidy up your project! [![Build Status][badge]][travis]
+
+[badge]: https://travis-ci.org/jonas-schievink/cargo-tidy.svg?branch=master
+[travis]: https://travis-ci.org/jonas-schievink/cargo-tidy
 
 This is a small Cargo subcommand, `cargo tidy`, which allows you to configure
 various code style checks to be executed. You can then put it in CI to make sure
@@ -44,3 +47,9 @@ just want different rules for `.md` files than for `.rs` files.
 
 Since `cargo tidy` allows specifying custom file globs, you can write multiple
 configuration files for different file types (or folders).
+
+As an example, this repo contains multiple configuration files for different
+file types: [tidy-config.md.toml](./tidy-config.md.toml),
+[tidy-config.rs.toml](./tidy-config.rs.toml), and
+[tidy-config.toml.toml](./tidy-config.toml.toml). Tidy is invoked with each of
+them from the Travis script in [.travis.yml](./.travis.yml).

@@ -10,3 +10,5 @@ script:
   - cargo test
   - cargo install -f --debug
   - cargo tidy -c tidy-config.rs.toml
+  - cargo tidy -c tidy-config.md.toml
+  - cargo tidy -c tidy-config.toml.toml
