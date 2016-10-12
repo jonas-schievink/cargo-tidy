@@ -23,8 +23,17 @@ cargo install cargo-tidy
 
 The `cargo tidy` project itself uses `cargo tidy` to check its own code style!
 
-Take a look at the [.travis.yml](./.travis.yml) to see how to run it for your
-own project.
+An example `.travis.yml` might look like this:
+
+```yml
+language: rust
+sudo: false
+before_script:
+  - export PATH=$HOME/.cargo/bin:$PATH && cargo install cargo-tidy
+script:
+  - cargo test
+  - cargo tidy -c my-tidy-config.toml
+```
 
 ## Different languages, different rules
 
