@@ -1,5 +1,8 @@
 use super::TidyContext;
 
+// XXX This might want to check graphemes, not characters, since this is about visual line length.
+// Need to check how similar tools do this!
+
 pub fn check(cx: &mut TidyContext) {
     let max_length = cx.config.max_line_length;
 
