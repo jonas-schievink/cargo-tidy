@@ -24,3 +24,10 @@ forbidden-content = [
     # regex.
     " $",
 ]
+
+# Rejects indentation with tabs and any number of spaces that is not a multiple
+# of 4.
+#
+# Tabs are also rejected by the rule above, but the second part is neat, since
+# code indented with 2 spaces (or similar) is caught.
+indentation-style = "4 spaces"

@@ -1,7 +1,8 @@
 //! The tidy style checking engine.
 
-mod forbidden_content;
-mod max_line_length;
+pub mod forbidden_content;
+pub mod indentation_style;
+pub mod max_line_length;
 
 use config::Config;
 
@@ -100,6 +101,7 @@ fn run_all_checks_on(config: &Config, path: PathBuf) -> Result<(), Vec<CheckErro
     // Run all checks on the contents
     max_line_length::check(&mut cx);
     forbidden_content::check(&mut cx);
+    indentation_style::check(&mut cx);
 
     if cx.errors.is_empty() {
         Ok(())
@@ -117,6 +119,7 @@ pub fn run_checks(config: &Config) -> Result<(), Vec<CheckError>> {
 
             // If the path matches any exclude glob, skip
             if config.exclude.iter().any(|exclude_pat| exclude_pat.matches_path(&path_buf)) {
+                debug!("path in exclude set, skipping");
                 None
             } else {
                 Some(path_buf)

@@ -1,5 +1,7 @@
 //! Configuration file parsing.
 
+use check::indentation_style::IndentationStyle;
+
 use glob::{Pattern, PatternError};
 use toml::{ParserError, Decoder, DecodeError, Value};
 use rustc_serialize::Decodable;
@@ -10,6 +12,7 @@ use std::io::{self, Read};
 use std::fs::File;
 use std::fmt;
 use std::error::Error;
+use std::str::FromStr;
 
 // FIXME return a better error when the config file does not exist
 
@@ -82,6 +85,18 @@ make_config! {
     forbidden_content: (RegexSet, Vec<String>) => |raw: Vec<String>| {
         (try!(RegexSet::new(&raw)), raw)
     },
+
+    // The indentation style to enforce in the checked files.
+    //
+    // See `IndentationStyle` for more info about the accepted values.
+    indentation_style: Option<IndentationStyle> => |raw: Option<String>| {
+        if let Some(raw) = raw {
+            Some(try!(IndentationStyle::from_str(&raw)
+                .map_err(|e| LoadError::InvalidIndentationSyle(e))))
+        } else {
+            None
+        }
+    },
 }
 
 // FIXME this could use one of the many error macro crates
@@ -100,6 +115,8 @@ pub enum LoadError {
     GlobError(PatternError),
     /// Invalid regex.
     RegexError(regex::Error),
+    /// An `indentation-style` key could not be parsed.
+    InvalidIndentationSyle(&'static str),
 }
 
 impl fmt::Display for LoadError {
@@ -117,6 +134,7 @@ impl fmt::Display for LoadError {
                 try!(write!(f, "unknown configuration key(s): {}", v)),
             LoadError::GlobError(ref e) => try!(write!(f, "{}", e)),
             LoadError::RegexError(ref e) => try!(write!(f, "{}", e)),
+            LoadError::InvalidIndentationSyle(ref e) => try!(write!(f, "{}", e)),
         }
 
         Ok(())
@@ -132,6 +150,7 @@ impl Error for LoadError {
             LoadError::IgnoredData(_) => "unknown key",
             LoadError::GlobError(ref e) => e.description(),
             LoadError::RegexError(ref e) => e.description(),
+            LoadError::InvalidIndentationSyle(ref e) => e,
         }
     }
 }
