@@ -14,6 +14,7 @@ use std::fs::File;
 use std::fmt;
 use std::error::Error;
 use std::str::FromStr;
+use std::u64;
 
 // FIXME return a better error when the config file does not exist
 
@@ -59,15 +60,18 @@ make_config! {
     //
     // When a file should be checked according to the `include` globs, it is matched against this
     // list of globs. If it matches, it's skipped.
-    exclude: Vec<Pattern> => |raw: Vec<String>| {
-        raw.iter().map(|s| Pattern::new(s)).collect::<Result<Vec<_>, _>>()?
+    exclude: Vec<Pattern> => |raw: Option<Vec<String>>| {
+        raw.unwrap_or(vec![])
+            .iter().map(|s| Pattern::new(s)).collect::<Result<Vec<_>, _>>()?
     },
 
 
     // Maximum number of `char`s in a single line of code.
     //
     // A line containing more characters fails the tidy check.
-    max_line_length: u64 => |raw: u64| { raw },
+    max_line_length: u64 => |raw: Option<u64>| {
+        raw.unwrap_or(u64::MAX)
+    },
 
     // List of regular expressions matching "forbidden" content of lines inside checked files.
     //
@@ -83,9 +87,10 @@ make_config! {
     // Currently, `RegexSet` does not seem to have a method for getting the string a regex inside it
     // was created with (despite printing all regexes in its `Debug` impl), so we store them as a
     // `Vec<String>` next to it.
-    forbidden_content: (RegexSet, Vec<String>) => |raw: Vec<String>| {
-        (RegexSet::new(&raw)?, raw)
-    },
+    forbidden_content: (RegexSet, Vec<String>) => |raw: Option<Vec<String>>| {{
+        let regexes = raw.unwrap_or(vec![]);
+        (RegexSet::new(&regexes)?, regexes)
+    }},
 
     // The indentation style to enforce in the checked files.
     //
