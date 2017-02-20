@@ -32,11 +32,11 @@ pub struct CheckError {
 
 impl fmt::Display for CheckError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "error at {}:{}:{}: {}",
-            self.path.display(),
-            self.line + 1,
-            self.column + 1,
-            self.msg));
+        write!(f, "error at {}:{}:{}: {}",
+               self.path.display(),
+               self.line + 1,
+               self.column + 1,
+               self.msg)?;
 
         Ok(())
     }

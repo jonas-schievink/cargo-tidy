@@ -51,8 +51,8 @@ make_config! {
     //
     // Default: `vec!["**/*.rs"]`, which checks all .rs-files in all directories but nothing else.
     include: Vec<Pattern> => |raw: Option<Vec<String>>| {
-        try!(raw.unwrap_or(vec!["**/*.rs".to_string()])
-            .iter().map(|s| Pattern::new(s)).collect::<Result<Vec<_>, _>>())
+        raw.unwrap_or(vec!["**/*.rs".to_string()])
+            .iter().map(|s| Pattern::new(s)).collect::<Result<Vec<_>, _>>()?
     },
 
     // List of file globs to exclude from checking.
@@ -60,7 +60,7 @@ make_config! {
     // When a file should be checked according to the `include` globs, it is matched against this
     // list of globs. If it matches, it's skipped.
     exclude: Vec<Pattern> => |raw: Vec<String>| {
-        try!(raw.iter().map(|s| Pattern::new(s)).collect::<Result<Vec<_>, _>>())
+        raw.iter().map(|s| Pattern::new(s)).collect::<Result<Vec<_>, _>>()?
     },
 
 
@@ -84,7 +84,7 @@ make_config! {
     // was created with (despite printing all regexes in its `Debug` impl), so we store them as a
     // `Vec<String>` next to it.
     forbidden_content: (RegexSet, Vec<String>) => |raw: Vec<String>| {
-        (try!(RegexSet::new(&raw)), raw)
+        (RegexSet::new(&raw)?, raw)
     },
 
     // The indentation style to enforce in the checked files.
@@ -92,8 +92,8 @@ make_config! {
     // See `IndentationStyle` for more info about the accepted values.
     indentation_style: Option<IndentationStyle> => |raw: Option<String>| {
         if let Some(raw) = raw {
-            Some(try!(IndentationStyle::from_str(&raw)
-                .map_err(|e| LoadError::InvalidIndentationStyle(e))))
+            Some(IndentationStyle::from_str(&raw)
+                .map_err(|e| LoadError::InvalidIndentationStyle(e))?)
         } else {
             None
         }
@@ -119,11 +119,11 @@ pub enum LoadError {
 impl fmt::Display for LoadError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            LoadError::IoError(ref e) => try!(write!(f, "IO error: {}", e)),
-            LoadError::TomlError(ref e) => try!(write!(f, "{}", e)),
-            LoadError::GlobError(ref e) => try!(write!(f, "{}", e)),
-            LoadError::RegexError(ref e) => try!(write!(f, "{}", e)),
-            LoadError::InvalidIndentationStyle(ref e) => try!(write!(f, "{}", e)),
+            LoadError::IoError(ref e) => write!(f, "IO error: {}", e)?,
+            LoadError::TomlError(ref e) => write!(f, "{}", e)?,
+            LoadError::GlobError(ref e) => write!(f, "{}", e)?,
+            LoadError::RegexError(ref e) => write!(f, "{}", e)?,
+            LoadError::InvalidIndentationStyle(ref e) => write!(f, "{}", e)?,
         }
 
         Ok(())
@@ -169,8 +169,8 @@ impl From<regex::Error> for LoadError {
 /// Decodes a type from TOML pulled from a reader.
 fn decode_toml<T: Deserialize, R: Read>(reader: &mut R) -> Result<T, LoadError> {
     let mut content = String::new();
-    try!(reader.read_to_string(&mut content));
-    Ok(try!(toml::from_str(&content)))
+    reader.read_to_string(&mut content)?;
+    Ok(toml::from_str(&content)?)
 }
 
 impl Config {
@@ -178,9 +178,9 @@ impl Config {
     pub fn load<P: AsRef<Path>>(path: P) -> Result<Config, LoadError> {
         debug!("loading configuration from {}", path.as_ref().display());
 
-        let mut file = try!(File::open(path));
-        let raw: RawConfig = try!(decode_toml(&mut file));
+        let mut file = File::open(path)?;
+        let raw: RawConfig = decode_toml(&mut file)?;
 
-        Ok(try!(Config::from_raw(raw)))
+        Ok(Config::from_raw(raw)?)
     }
 }
