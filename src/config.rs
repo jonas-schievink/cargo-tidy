@@ -3,9 +3,10 @@
 use check::indentation_style::IndentationStyle;
 
 use glob::{Pattern, PatternError};
-use toml::{ParserError, Decoder, DecodeError, Value};
-use rustc_serialize::Decodable;
+use toml;
+use toml::de::Error as TomlError;
 use regex::{self, RegexSet};
+use serde::Deserialize;
 
 use std::path::Path;
 use std::io::{self, Read};
@@ -20,7 +21,7 @@ use std::str::FromStr;
 
 macro_rules! make_config {
     ( $( $fld:ident : $t:ty => |$raw_ident:ident : $raw_ty:ty| { $load:expr },)+ ) => {
-        #[derive(RustcDecodable)]
+        #[derive(Deserialize)]
         struct RawConfig {
             $( $fld : $raw_ty, )+
         }
@@ -105,12 +106,8 @@ make_config! {
 pub enum LoadError {
     /// I/O error while reading/opening config file.
     IoError(io::Error),
-    /// TOML syntax errors.
-    TomlErrors(Vec<ParserError>),
-    /// Deserialization error.
-    DecodeError(DecodeError),
-    /// Unknown config key.
-    IgnoredData(Value),
+    /// TOML syntax/decoding errors.
+    TomlError(TomlError),
     /// Invalid glob.
     GlobError(PatternError),
     /// Invalid regex.
@@ -123,15 +120,7 @@ impl fmt::Display for LoadError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             LoadError::IoError(ref e) => try!(write!(f, "IO error: {}", e)),
-            LoadError::TomlErrors(ref errs) => {
-                try!(writeln!(f, "syntax error:"));
-                for e in errs {
-                    try!(writeln!(f, "{}", e));
-                }
-            }
-            LoadError::DecodeError(ref e) => try!(write!(f, "{}", e)),
-            LoadError::IgnoredData(ref v) =>
-                try!(write!(f, "unknown configuration key(s): {}", v)),
+            LoadError::TomlError(ref e) => try!(write!(f, "{}", e)),
             LoadError::GlobError(ref e) => try!(write!(f, "{}", e)),
             LoadError::RegexError(ref e) => try!(write!(f, "{}", e)),
             LoadError::InvalidIndentationSyle(ref e) => try!(write!(f, "{}", e)),
@@ -145,9 +134,7 @@ impl Error for LoadError {
     fn description(&self) -> &str {
         match *self {
             LoadError::IoError(ref e) => e.description(),
-            LoadError::TomlErrors(_) => "syntax error",
-            LoadError::DecodeError(ref e) => e.description(),
-            LoadError::IgnoredData(_) => "unknown key",
+            LoadError::TomlError(ref e) => e.description(),
             LoadError::GlobError(ref e) => e.description(),
             LoadError::RegexError(ref e) => e.description(),
             LoadError::InvalidIndentationSyle(ref e) => e,
@@ -161,15 +148,9 @@ impl From<io::Error> for LoadError {
     }
 }
 
-impl From<Vec<ParserError>> for LoadError {
-    fn from(e: Vec<ParserError>) -> Self {
-        LoadError::TomlErrors(e)
-    }
-}
-
-impl From<DecodeError> for LoadError {
-    fn from(e: DecodeError) -> Self {
-        LoadError::DecodeError(e)
+impl From<TomlError> for LoadError {
+    fn from(e: TomlError) -> Self {
+        LoadError::TomlError(e)
     }
 }
 
@@ -185,18 +166,11 @@ impl From<regex::Error> for LoadError {
     }
 }
 
-/// Decodes a `Decodable` type from TOML pulled from a reader.
-fn decode_toml<T: Decodable, R: Read>(reader: &mut R) -> Result<T, LoadError> {
+/// Decodes a type from TOML pulled from a reader.
+fn decode_toml<T: Deserialize, R: Read>(reader: &mut R) -> Result<T, LoadError> {
     let mut content = String::new();
     try!(reader.read_to_string(&mut content));
-
-    let value = try!(content.parse());
-    let mut decoder = Decoder::new(value);
-    let value = try!(T::decode(&mut decoder));
-    if let Some(value) = decoder.toml {
-        return Err(LoadError::IgnoredData(value));
-    }
-    Ok(value)
+    Ok(try!(toml::from_str(&content)))
 }
 
 impl Config {

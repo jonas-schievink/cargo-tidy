@@ -1,9 +1,11 @@
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
 extern crate env_logger;
 extern crate clap;
 extern crate toml;
-extern crate rustc_serialize;
 extern crate regex;
 extern crate glob;
 
