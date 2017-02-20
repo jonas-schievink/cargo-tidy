@@ -93,7 +93,7 @@ make_config! {
     indentation_style: Option<IndentationStyle> => |raw: Option<String>| {
         if let Some(raw) = raw {
             Some(try!(IndentationStyle::from_str(&raw)
-                .map_err(|e| LoadError::InvalidIndentationSyle(e))))
+                .map_err(|e| LoadError::InvalidIndentationStyle(e))))
         } else {
             None
         }
@@ -113,7 +113,7 @@ pub enum LoadError {
     /// Invalid regex.
     RegexError(regex::Error),
     /// An `indentation-style` key could not be parsed.
-    InvalidIndentationSyle(&'static str),
+    InvalidIndentationStyle(&'static str),
 }
 
 impl fmt::Display for LoadError {
@@ -123,7 +123,7 @@ impl fmt::Display for LoadError {
             LoadError::TomlError(ref e) => try!(write!(f, "{}", e)),
             LoadError::GlobError(ref e) => try!(write!(f, "{}", e)),
             LoadError::RegexError(ref e) => try!(write!(f, "{}", e)),
-            LoadError::InvalidIndentationSyle(ref e) => try!(write!(f, "{}", e)),
+            LoadError::InvalidIndentationStyle(ref e) => try!(write!(f, "{}", e)),
         }
 
         Ok(())
@@ -137,7 +137,7 @@ impl Error for LoadError {
             LoadError::TomlError(ref e) => e.description(),
             LoadError::GlobError(ref e) => e.description(),
             LoadError::RegexError(ref e) => e.description(),
-            LoadError::InvalidIndentationSyle(ref e) => e,
+            LoadError::InvalidIndentationStyle(ref e) => e,
         }
     }
 }
